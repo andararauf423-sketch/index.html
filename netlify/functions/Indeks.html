@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AzurHub | Order AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black text-white p-6">
+    <div class="max-w-md mx-auto bg-gray-900 p-8 rounded-xl border border-blue-500 shadow-lg shadow-blue-500/20">
+        <h2 class="text-2xl font-bold mb-6 text-blue-400 text-center">AzurHub Order 🚀</h2>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm mb-1">Nama Kamu:</label>
+                <input id="nama" type="text" class="w-full bg-gray-800 p-3 rounded border border-gray-700 focus:border-blue-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-sm mb-1">Request Web (Detail):</label>
+                <textarea id="request" class="w-full bg-gray-800 p-3 rounded border border-gray-700 h-32 focus:border-blue-500 outline-none" placeholder="Contoh: Buat web dashboard hacker dark mode..."></textarea>
+            </div>
+            <button onclick="kirimOrder()" class="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-lg font-bold transition">KIRIM PESANAN</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // TEMPEL CONFIG FIREBASE LO DI SINI (YANG TADI)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCgn6BJJ8H4_JrudtgK__H1NNtV-eIAoO8",
+            authDomain: "azurhub-system.firebaseapp.com",
+            projectId: "azurhub-system",
+            storageBucket: "azurhub-system.firebasestorage.app",
+            messagingSenderId: "897658533775",
+            appId: "1:897658533775:web:17b04bcd1c068c33757dfa",
+            measurementId: "G-H6Y9KE5C42"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.kirimOrder = async () => {
+            const nama = document.getElementById('nama').value;
+            const req = document.getElementById('request').value;
+
+            if(!nama || !req) return alert("Isi semua, babi!");
+
+            try {
+                await addDoc(collection(db, "orders"), {
+                    nama_user: nama,
+                    request: req,
+                    status: "pending", // Ini yang bikin tombol di admin muncul otomatis
+                    createdAt: serverTimestamp()
+                });
+                alert("Pesanan terkirim! Cek di halaman Admin.");
+                location.reload();
+            } catch (e) {
+                alert("Gagal: " + e.message);
+            }
+        }
+    </script>
+</body>
+</html>
+
