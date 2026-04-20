@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AzurHub | Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0f172a; color: white; font-family: 'Inter', sans-serif; }
+        .card { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 15px; border: 1px solid #334155; }
+    </style>
+</head>
+<body class="p-5">
+    <h1 class="text-3xl font-bold mb-6 text-blue-400">AzurHub Admin Panel 🛠️</h1>
+    
+    <div id="order-list">
+        <p class="text-gray-400">Memuat pesanan member...</p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // CONFIG FIREBASE LO (Ganti dengan punya lo!)
+        const firebaseConfig = {
+            apiKey: "AIzaSy...", 
+            authDomain: "azurshub.firebaseapp.com",
+            projectId: "azurshub",
+            storageBucket: "azurshub.appspot.com",
+            messagingSenderId: "...",
+            appId: "..."
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Ambil Data Order dari Firebase
+        const orderList = document.getElementById('order-list');
+
+        onSnapshot(collection(db, "orders"), (snapshot) => {
+            orderList.innerHTML = "";
+            snapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                const id = docSnap.id;
+
+                const div = document.createElement('div');
+                div.className = "card";
+                div.innerHTML = `
+                    <p class="text-sm text-blue-300">ID: ${id}</p>
+                    <p class="text-lg font-semibold">User: ${data.nama_user || 'Anonim'}</p>
+                    <p class="bg-black p-3 rounded mt-2 text-green-400 font-mono text-sm">${data.request}</p>
+                    <p class="mt-2 text-sm">Status: <span class="uppercase font-bold">${data.status}</span></p>
+                    ${data.status === 'pending' ? 
+                        `<button onclick="approveOrder('${id}', '${data.request}')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded mt-3 w-full transition font-bold">APPROVE & GENERATE AI</button>` 
+                        : `<p class="text-green-500 mt-2 font-bold font-mono">SELESAI ✅</p>`}
+                `;
+                orderList.appendChild(div);
+            });
+        });
+
+        // FUNGSI SAKTI MANGGIL AI
+        window.approveOrder = async (orderId, promptUser) => {
+            alert("AI AzurHub lagi ngerakit kode... Tunggu bentar, Cok!");
+
+            try {
+                const response = await fetch('/.netlify/functions/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: promptUser })
+                });
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+
+                // Update hasil ke Firebase
+                await updateDoc(doc(db, "orders", orderId), {
+                    status: "done",
+                    htmlContent: data.html,
+                    completedAt: serverTimestamp()
+                });
+
+                alert("BERHASIL! Kodingan AI sudah masuk database.");
+            } catch (err) {
+                console.error(err);
+                alert("Gagal konek ke AI: " + err.message);
+            }
+        };
+    </script>
+</body>
+</html>
