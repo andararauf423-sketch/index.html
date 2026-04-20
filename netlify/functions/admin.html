@@ -3,88 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AzurHub | Admin Panel</title>
+    <title>AzurHub Admin | Control Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background-color: #0f172a; color: white; font-family: 'Inter', sans-serif; }
-        .card { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 15px; border: 1px solid #334155; }
-    </style>
 </head>
-<body class="p-5">
-    <h1 class="text-3xl font-bold mb-6 text-blue-400">AzurHub Admin Panel 🛠️</h1>
+<body class="bg-slate-900 text-white p-5">
+    <h1 class="text-2xl font-bold text-blue-400 mb-6">AzurHub Admin Panel 🛠️</h1>
     
-    <div id="order-list">
-        <p class="text-gray-400">Memuat pesanan member...</p>
+    <div id="order-list" class="space-y-4">
+        <p class="text-slate-400">Menunggu pesanan masuk...</p>
     </div>
 
     <script type="module">
+        // Import Firebase (Versi CDN buat Web Lite)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, onSnapshot, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // CONFIG FIREBASE LO (Ganti dengan punya lo!)
+        // CONFIG HASIL COPY-PASTE LO TADI
         const firebaseConfig = {
-            apiKey: "AIzaSy...", 
-            authDomain: "azurshub.firebaseapp.com",
-            projectId: "azurshub",
-            storageBucket: "azurshub.appspot.com",
-            messagingSenderId: "...",
-            appId: "..."
+            apiKey: "AIzaSyCgn6BJJ8H4_JrudtgK__H1NNtV-eIAoO8",
+            authDomain: "azurhub-system.firebaseapp.com",
+            projectId: "azurhub-system",
+            storageBucket: "azurhub-system.firebasestorage.app",
+            messagingSenderId: "897658533775",
+            appId: "1:897658533775:web:17b04bcd1c068c33757dfa",
+            measurementId: "G-H6Y9KE5C42"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Ambil Data Order dari Firebase
+        // Munculin Data dari Firestore
         const orderList = document.getElementById('order-list');
-
         onSnapshot(collection(db, "orders"), (snapshot) => {
             orderList.innerHTML = "";
             snapshot.forEach((docSnap) => {
                 const data = docSnap.data();
                 const id = docSnap.id;
-
-                const div = document.createElement('div');
-                div.className = "card";
-                div.innerHTML = `
-                    <p class="text-sm text-blue-300">ID: ${id}</p>
-                    <p class="text-lg font-semibold">User: ${data.nama_user || 'Anonim'}</p>
-                    <p class="bg-black p-3 rounded mt-2 text-green-400 font-mono text-sm">${data.request}</p>
-                    <p class="mt-2 text-sm">Status: <span class="uppercase font-bold">${data.status}</span></p>
-                    ${data.status === 'pending' ? 
-                        `<button onclick="approveOrder('${id}', '${data.request}')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded mt-3 w-full transition font-bold">APPROVE & GENERATE AI</button>` 
-                        : `<p class="text-green-500 mt-2 font-bold font-mono">SELESAI ✅</p>`}
+                
+                const card = document.createElement('div');
+                card.className = "p-4 bg-slate-800 rounded-lg border border-slate-700";
+                card.innerHTML = `
+                    <p class="text-xs text-slate-500">ID: ${id}</p>
+                    <p class="font-bold text-lg text-blue-300">${data.nama_user || 'Member Azur'}</p>
+                    <div class="bg-black p-3 rounded mt-2 text-green-400 font-mono text-sm">
+                        ${data.request}
+                    </div>
+                    <div class="mt-4">
+                        ${data.status === 'pending' ? 
+                            `<button onclick="approveOrder('${id}', '${data.request}')" class="bg-blue-600 w-full py-2 rounded-md font-bold hover:bg-blue-500 transition">APPROVE & RAKIT AI</button>` : 
+                            `<p class="text-center text-green-500 font-bold italic">PROSES SELESAI ✅</p>`
+                        }
+                    </div>
                 `;
-                orderList.appendChild(div);
+                orderList.appendChild(card);
             });
         });
 
-        // FUNGSI SAKTI MANGGIL AI
+        // Fungsi Approve (Panggil Netlify Function lo)
         window.approveOrder = async (orderId, promptUser) => {
-            alert("AI AzurHub lagi ngerakit kode... Tunggu bentar, Cok!");
-
+            alert("AI AzurHub lagi kerja, jangan di-close!");
             try {
                 const response = await fetch('/.netlify/functions/generate', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ prompt: promptUser })
                 });
-
-                const data = await response.json();
-                if (data.error) throw new Error(data.error);
-
-                // Update hasil ke Firebase
-                await updateDoc(doc(db, "orders", orderId), {
-                    status: "done",
-                    htmlContent: data.html,
-                    completedAt: serverTimestamp()
-                });
-
-                alert("BERHASIL! Kodingan AI sudah masuk database.");
+                const resData = await response.json();
+                
+                if (resData.html) {
+                    await updateDoc(doc(db, "orders", orderId), {
+                        status: "done",
+                        htmlContent: resData.html,
+                        completedAt: serverTimestamp()
+                    });
+                    alert("Website berhasil dirakit!");
+                }
             } catch (err) {
-                console.error(err);
-                alert("Gagal konek ke AI: " + err.message);
+                alert("Error: " + err.message);
             }
         };
     </script>
 </body>
 </html>
+
